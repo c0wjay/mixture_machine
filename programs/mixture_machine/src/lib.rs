@@ -13,6 +13,7 @@ use {
             program::{invoke, invoke_signed},
             serialize_utils::{read_pubkey, read_u16},
             system_instruction, sysvar,
+            pubkey::Pubkey,
         },
         AnchorDeserialize, AnchorSerialize, Discriminator, Key,
     },
@@ -32,10 +33,10 @@ use {
     spl_associated_token_account::create_associated_token_account,
 };
 
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("7TzTuLobYxcPJw62EMEq93C72vBd8tmRP8CbQ7e4tS3z");
 
 const EXPIRE_OFFSET: i64 = 10 * 60;
-const PREFIX: &str = "mixture_machine";
+const PREFIX: &str = "candy_machine";
 const BLOCK_HASHES: &str = "SysvarRecentB1ockHashes11111111111111111111";
 #[program]
 pub mod mixture_machine {
@@ -66,50 +67,58 @@ pub mod mixture_machine {
             return Err(ErrorCode::IncorrectSlotHashesPubkey.into());
         }
 
-        let mut remaining_accounts_counter: usize = 0; // child NFT들 remaining accounts로 받기.
+        let mut remaining_accounts_counter: usize = 0;
         if ctx.remaining_accounts.len() <= remaining_accounts_counter {
             return Err(ErrorCode::ChildrenAuthorityMissing.into());
         }
 
         let children_number = ctx.remaining_accounts.len() / 4; // 나중에 checked_div로 바꿔주기
 
-        for i in 0..children_number {
+        // order of remaining accounts: child transfer authority - child mint - child ata - child vault
+        for _i in 0..children_number {
+            // child NFT transfer authority
             let child_authority_info = &ctx.remaining_accounts[remaining_accounts_counter];
             remaining_accounts_counter += 1;
+            // mint account of child NFT
             let child_mint = &ctx.remaining_accounts[remaining_accounts_counter];
             remaining_accounts_counter += 1;
+            // minter's ata of child NFT
             let child_ata_info = &ctx.remaining_accounts[remaining_accounts_counter];
             remaining_accounts_counter += 1;
+            // program's vault pda of child NFT
             let child_vault_info = &ctx.remaining_accounts[remaining_accounts_counter];
             remaining_accounts_counter += 1;
 
-            // child NFT 별로 프로그램의 vault account 만들어주기
-            let child_ata = assert_is_ata(child_ata_info, &payer.key(), &child_mint.key)?;
+            msg!("{} | {}", &child_authority_info.key, &child_mint.key);
+            msg!("{} | {}", &child_ata_info.key, &child_vault_info.key);
 
-            let vault_infos = vec![
-                child_vault_info.clone(), // associated_account.clone(),
-                ctx.accounts.payer.to_account_info(), // funding_account.clone(),
-                mixture_machine_creator.to_account_info(), // fee_owner_acct.clone(),
-                child_mint.clone(),// mint_account.clone(),
-                ctx.accounts.token_program.to_account_info(), // spl_token_program_acct.clone(),
-                ctx.accounts.system_program.to_account_info(), // sys_program_acct.clone(),
-                ctx.accounts.rent.to_account_info(), // sys_rent_acct.clone(),
-            ];
+            // creating program's vault account of child NFT
+            let child_ata = assert_is_ata(child_ata_info, &payer.key(), &child_mint.key)?;        
+            // let vault_infos = vec![
+            //     ctx.accounts.payer.to_account_info(), // funding_account.clone(),
+            //     child_vault_info.clone(), // associated_account.clone(),
+            //     payer_wallet.to_account_info(),// mixture_machine_creator.to_account_info(), // fee_owner_acct.clone(),
+            //     child_mint.clone(),// mint_account.clone(),
+            //     ctx.accounts.system_program.to_account_info(), // sys_program_acct.clone(),
+            //     ctx.accounts.token_program.to_account_info(), // spl_token_program_acct.clone(),
+            //     ctx.accounts.rent.to_account_info(), // sys_rent_acct.clone(),
+            // ];
             
-            invoke(
-                &create_associated_token_account(
-                    &ctx.accounts.payer.key,
-                    &mixture_machine_creator.key(),
-                    &child_mint.key,
-                ),
-                vault_infos.as_slice(),
-            )?;
+            // invoke(
+            //     &create_associated_token_account(
+            //         &ctx.accounts.payer.key,
+            //         &payer_wallet.key, //&mixture_machine_creator.key(),
+            //         &child_mint.key,
+            //     ),
+            //     vault_infos.as_slice(),
+            // )?;
             
-            // child NFT A의 Ownership 이동(부모 NFT minter -> Mixture PDA)
+            // transferring ownership of child NFT (NFT minter -> Mixture PDA)
             if child_ata.amount < 1 {
                 return Err(ErrorCode::NotEnoughTokens.into());
             }
 
+            msg!("c string");
             spl_token_transfer(TokenTransferParams {
                 source: child_ata_info.clone(), //token_account_info.clone(),
                 destination: child_vault_info.clone(), //wallet.to_account_info(),
@@ -118,6 +127,8 @@ pub mod mixture_machine {
                 token_program: token_program.to_account_info(),
                 amount: 1,
             })?;
+
+            msg!("d string");
         }
 
         // child NFT A의 Ownership 이동에 사용 용도 변경 (부모 NFT minter -> Mixture PDA)
@@ -160,6 +171,8 @@ pub mod mixture_machine {
                 share: 0,
             }];
 
+        msg!("e string");
+
         for c in &mixture_machine.data.creators {
             creators.push(mpl_token_metadata::state::Creator {
                 address: c.address,
@@ -167,6 +180,8 @@ pub mod mixture_machine {
                 share: c.share,
             });
         }
+
+        msg!("f string");
 
         let metadata_infos = vec![
             ctx.accounts.metadata.to_account_info(),
@@ -490,7 +505,7 @@ pub struct ComposeNFT<'info> {
     system_program: Program<'info, System>,
     rent: Sysvar<'info, Rent>,
     clock: Sysvar<'info, Clock>,
-    #[account(address = sysvar::recent_blockhashes::ID)]
+    // #[account(address = sysvar::recent_blockhashes::ID)]
     recent_blockhashes: UncheckedAccount<'info>,
     #[account(address = sysvar::instructions::id())]
     instruction_sysvar_account: UncheckedAccount<'info>,
