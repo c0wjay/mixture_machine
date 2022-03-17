@@ -291,6 +291,7 @@ pub mod mixture_machine {
         let mixture_machine = &mut ctx.accounts.mixture_machine;
         let payer = &ctx.accounts.payer;
         let token_program = &ctx.accounts.token_program;
+        let parent_token_mint = &ctx.accounts.parent_token_mint;
         //Account name the same for IDL compatability
         let recent_slothashes = &ctx.accounts.recent_blockhashes;
         let instruction_sysvar_account = &ctx.accounts.instruction_sysvar_account;
@@ -311,9 +312,15 @@ pub mod mixture_machine {
 
         let children_number = ctx.remaining_accounts.len() / 2; // 나중에 checked_div로 바꿔주기
 
-        let mm_key = mixture_machine.key();
-        let authority_seeds = [PREFIX.as_bytes(), mm_key.as_ref(), &[creator_bump]];
-        
+        let creator_key = &ctx.accounts.mixture_machine_creator;
+        let mm_seeds = [PREFIX.as_bytes()];
+        let mm_id = mixture_machine::id();
+        let (mm_pda, mm_bump) = Pubkey::find_program_address(&mm_seeds, &mm_id);
+        let authority_seeds = [PREFIX.as_bytes(), &[mm_bump]];
+
+        msg!("{} | {} | {}", &creator_key.key(), &mm_pda, &mm_bump);
+
+        msg!("a string");
         // order of remaining accounts: child transfer authority - child mint - child ata - child vault
         for _i in 0..children_number {
             // mint account of child NFT, get this from getTokenAccountsByOwner of "mixture PDA".
@@ -325,7 +332,7 @@ pub mod mixture_machine {
             // ata of child NFT owned by "mixture PDA", get this from getTokenAccountsByOwner of "mixture PDA".
             let child_vault_info = &ctx.remaining_accounts[remaining_accounts_counter];
             remaining_accounts_counter += 1;
-
+            msg!("b string");
             // msg!("{} | {}", &child_authority_info.key, &child_mint.key);
             // msg!("{} | {}", &child_ata_info.key, &child_vault_info.key);
 
@@ -342,16 +349,17 @@ pub mod mixture_machine {
             let transfer_infos = vec![
                 child_vault_info.clone(),
                 child_ata_info.clone(),
-                mixture_machine.to_account_info(),
+                creator_key.to_account_info(),
                 token_program.to_account_info(),
             ];
+            msg!("{} | {} ", &child_vault_info.key, &child_ata_info.key);
 
             invoke_signed(
                 &spl_token::instruction::transfer(
                     token_program.key,
                     child_vault_info.key,
                     child_ata_info.key,
-                    &mixture_machine.key(),
+                    &creator_key.key,
                     &[],
                     1,
                 )?,
@@ -359,7 +367,7 @@ pub mod mixture_machine {
                 &[&authority_seeds],
             )?;
 
-            // msg!("d string");
+            msg!("c string");
         }
 
         msg!("Before parent burn");
@@ -367,10 +375,10 @@ pub mod mixture_machine {
 
 
         spl_token_burn(TokenBurnParams {
-            mint: ctx.accounts.parent_token_mint.to_account_info(),
+            mint: parent_token_mint.to_account_info(),
             source: ctx.accounts.parent_token_account.to_account_info(),
             amount: 1,
-            authority: payer.to_account_info(),//ctx.accounts.parent_burn_authority.to_account_info(),
+            authority: ctx.accounts.parent_burn_authority.to_account_info(),
             authority_signer_seeds: None,
             token_program: token_program.to_account_info(),
         })?;
@@ -663,9 +671,13 @@ pub struct ComposeNFT<'info> {
 #[derive(Accounts)]
 #[instruction(creator_bump: u8)]
 pub struct DecomposeNFT<'info> {
-    // get mixture_machine PDA from parent NFT's metadata, in creators[1].
+    // mixture_machine PDA which is associated with parent NFT and owns child NFTs.
     #[account(mut)]
     mixture_machine: Account<'info, MixtureMachine>,
+    #[account(
+        seeds=[PREFIX.as_bytes()], bump=creator_bump
+    )]
+    mixture_machine_creator: UncheckedAccount<'info>,
     payer: Signer<'info>,
     // With the following accounts we aren't using anchor macros because they are CPI'd
     // through to token-metadata which will do all the validations we need on them.
@@ -673,7 +685,7 @@ pub struct DecomposeNFT<'info> {
     parent_token_mint: UncheckedAccount<'info>,
     #[account(mut)]
     parent_token_account: UncheckedAccount<'info>,
-    //parent_burn_authority: Signer<'info>,
+    parent_burn_authority: Signer<'info>,
     token_program: Program<'info, Token>,
     system_program: Program<'info, System>,
     rent: Sysvar<'info, Rent>,
