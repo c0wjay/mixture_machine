@@ -2,41 +2,40 @@ pub mod utils;
 
 use {
     crate::utils::{
-        assert_initialized, assert_is_ata, assert_keys_equal, assert_owned_by,
-        spl_token_burn, spl_token_transfer, TokenBurnParams,
-        TokenTransferParams,
+        assert_is_ata, assert_owned_by, //assert_initialized, assert_keys_equal,
+        spl_token_transfer, TokenTransferParams, spl_token_burn, TokenBurnParams,
     },
     anchor_lang::{
         prelude::*,
         solana_program::{
             log::sol_log_compute_units,
-            program::{invoke, invoke_signed},
+            program::invoke_signed, //invoke
             serialize_utils::{read_pubkey, read_u16},
-            system_instruction, sysvar,
+            sysvar, //system_instruction, 
             pubkey::Pubkey,
         },
         AnchorDeserialize, AnchorSerialize, Discriminator, Key,
     },
-    anchor_spl::token::{Token, TokenAccount},
-    arrayref::array_ref,
+    anchor_spl::token::Token, //TokenAccount
+    //arrayref::array_ref,
     mpl_token_metadata::{
-        instruction::{create_master_edition, create_metadata_accounts, update_metadata_accounts},
+        instruction::create_metadata_accounts, // create_master_edition, update_metadata_accounts,
         state::{
-            MAX_CREATOR_LEN, MAX_CREATOR_LIMIT, MAX_NAME_LENGTH, MAX_SYMBOL_LENGTH, MAX_URI_LENGTH,
-        },
+            MAX_CREATOR_LIMIT, MAX_SYMBOL_LENGTH,
+        }, //MAX_CREATOR_LEN, MAX_NAME_LENGTH, MAX_URI_LENGTH,
     },
-    spl_token::{
-        state::Mint,
-        instruction::transfer
-    },
-    std::{cell::RefMut, ops::Deref, str::FromStr},
-    spl_associated_token_account::create_associated_token_account,
+    // spl_token::{
+    //     state::Mint,
+    //     instruction::transfer
+    // },
+    std::str::FromStr, //cell::RefMut, ops::Deref, 
+    //spl_associated_token_account::create_associated_token_account,
 };
 
 declare_id!("7TzTuLobYxcPJw62EMEq93C72vBd8tmRP8CbQ7e4tS3z");
 
-const EXPIRE_OFFSET: i64 = 10 * 60;
-const PREFIX: &str = "candy_machine";
+// const EXPIRE_OFFSET: i64 = 10 * 60;
+const PREFIX: &str = "mixture_machine";
 const BLOCK_HASHES: &str = "SysvarRecentB1ockHashes11111111111111111111";
 #[program]
 pub mod mixture_machine {
@@ -51,12 +50,20 @@ pub mod mixture_machine {
     ) -> ProgramResult{
         let mixture_machine = &mut ctx.accounts.mixture_machine;
         let mixture_machine_creator = &ctx.accounts.mixture_machine_creator;
-        let clock = &ctx.accounts.clock;
+        // msg!("{} | {}", &mixture_machine.key(), &mixture_machine_creator.key);
+        // let clock = &ctx.accounts.clock; // delete this.
         let payer = &ctx.accounts.payer;
         let token_program = &ctx.accounts.token_program;
         //Account name the same for IDL compatability
         let recent_slothashes = &ctx.accounts.recent_blockhashes;
         let instruction_sysvar_account = &ctx.accounts.instruction_sysvar_account;
+
+        // let mm_key = mixture_machine.key();
+        // let authority_seeds = [PREFIX.as_bytes(), mm_key.as_ref()];
+        // let mm_id = mixture_machine::id();
+        // let (mm_pda, mm_bump) = Pubkey::find_program_address(&authority_seeds, &mm_id);
+        // msg!("{} | {} | {}", &mixture_machine.key(), &mixture_machine_creator.key, &mm_pda);
+        // msg!("{}", &mm_bump);
 
         if recent_slothashes.key().to_string() == BLOCK_HASHES {
             msg!("recent_blockhashes is deprecated and will break soon");
@@ -89,8 +96,8 @@ pub mod mixture_machine {
             let child_vault_info = &ctx.remaining_accounts[remaining_accounts_counter];
             remaining_accounts_counter += 1;
 
-            msg!("{} | {}", &child_authority_info.key, &child_mint.key);
-            msg!("{} | {}", &child_ata_info.key, &child_vault_info.key);
+            // msg!("{} | {}", &child_authority_info.key, &child_mint.key);
+            // msg!("{} | {}", &child_ata_info.key, &child_vault_info.key);
 
             // creating program's vault account of child NFT
             let child_ata = assert_is_ata(child_ata_info, &payer.key(), &child_mint.key)?;        
@@ -118,7 +125,7 @@ pub mod mixture_machine {
                 return Err(ErrorCode::NotEnoughTokens.into());
             }
 
-            msg!("c string");
+            // msg!("c string");
             spl_token_transfer(TokenTransferParams {
                 source: child_ata_info.clone(), //token_account_info.clone(),
                 destination: child_vault_info.clone(), //wallet.to_account_info(),
@@ -128,7 +135,7 @@ pub mod mixture_machine {
                 amount: 1,
             })?;
 
-            msg!("d string");
+            // msg!("d string");
         }
 
         // child NFT A의 Ownership 이동에 사용 용도 변경 (부모 NFT minter -> Mixture PDA)
@@ -157,12 +164,13 @@ pub mod mixture_machine {
         // let index = u64::from_le_bytes(*most_recent);
         // let modded: usize = index
         //     .checked_rem(mixture_machine.data.items_available)
-        //     .ok_or(ErrorCode::NumericalOverflowError)? as usize;
+        //     .ok_or(ErrorCode::NumericalOverflowError)? as usizmixture_machinee;
 
         // let config_line = get_config_line(&mixture_machine, modded, mixture_machine.items_redeemed)?;
 
-        let cm_key = mixture_machine.key();
-        let authority_seeds = [PREFIX.as_bytes(), cm_key.as_ref(), &[creator_bump]];
+        let mm_key = mixture_machine.key();
+        let authority_seeds = [PREFIX.as_bytes(), mm_key.as_ref(), &[creator_bump]];
+
 
         let mut creators: Vec<mpl_token_metadata::state::Creator> =
             vec![mpl_token_metadata::state::Creator {
@@ -170,8 +178,14 @@ pub mod mixture_machine {
                 verified: true,
                 share: 0,
             }];
+        
+        creators.push(mpl_token_metadata::state::Creator {
+            address: mixture_machine.key(),
+            verified: false,
+            share: 0,
+        });
 
-        msg!("e string");
+        // msg!("e string");
 
         for c in &mixture_machine.data.creators {
             creators.push(mpl_token_metadata::state::Creator {
@@ -181,7 +195,7 @@ pub mod mixture_machine {
             });
         }
 
-        msg!("f string");
+        // msg!("f string");
 
         let metadata_infos = vec![
             ctx.accounts.metadata.to_account_info(),
@@ -229,6 +243,138 @@ pub mod mixture_machine {
             metadata_infos.as_slice(),
             &[&authority_seeds],
         )?;
+
+        msg!("Before instr check");
+        sol_log_compute_units();
+
+        let instruction_sysvar_account_info = instruction_sysvar_account.to_account_info();
+
+        let instruction_sysvar = instruction_sysvar_account_info.data.borrow();
+
+        let mut idx = 0;
+        let num_instructions = read_u16(&mut idx, &instruction_sysvar)
+            .map_err(|_| ProgramError::InvalidAccountData)?;
+
+        let associated_token =
+            Pubkey::from_str("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL").unwrap();
+
+        for index in 0..num_instructions {
+            let mut current = 2 + (index * 2) as usize;
+            let start = read_u16(&mut current, &instruction_sysvar).unwrap();
+
+            current = start as usize;
+            let num_accounts = read_u16(&mut current, &instruction_sysvar).unwrap();
+            current += (num_accounts as usize) * (1 + 32);
+            let program_id = read_pubkey(&mut current, &instruction_sysvar).unwrap();
+
+            if program_id != mixture_machine::id()
+                && program_id != spl_token::id()
+                && program_id != anchor_lang::solana_program::system_program::ID
+                && program_id != associated_token
+            {
+                msg!("Transaction had ix with program id {}", program_id);
+                return Err(ErrorCode::SuspiciousTransaction.into());
+            }
+        }
+
+        msg!("At the end");
+        sol_log_compute_units();
+        Ok(())
+    }
+
+
+    pub fn decompose_nft<'info>(
+        ctx: Context<'_, '_, '_, 'info, DecomposeNFT<'info>>,
+        creator_bump: u8,
+    ) -> ProgramResult{
+        // get mixture_machine PDA from parent NFT's metadata, in creators[1].
+        let mixture_machine = &mut ctx.accounts.mixture_machine;
+        let payer = &ctx.accounts.payer;
+        let token_program = &ctx.accounts.token_program;
+        //Account name the same for IDL compatability
+        let recent_slothashes = &ctx.accounts.recent_blockhashes;
+        let instruction_sysvar_account = &ctx.accounts.instruction_sysvar_account;
+
+        if recent_slothashes.key().to_string() == BLOCK_HASHES {
+            msg!("recent_blockhashes is deprecated and will break soon");
+        }
+        if recent_slothashes.key() != sysvar::slot_hashes::id()
+            && recent_slothashes.key().to_string() != BLOCK_HASHES
+        {
+            return Err(ErrorCode::IncorrectSlotHashesPubkey.into());
+        }
+
+        let mut remaining_accounts_counter: usize = 0;
+        if ctx.remaining_accounts.len() <= remaining_accounts_counter {
+            return Err(ErrorCode::ChildrenAuthorityMissing.into());
+        }
+
+        let children_number = ctx.remaining_accounts.len() / 2; // 나중에 checked_div로 바꿔주기
+
+        let mm_key = mixture_machine.key();
+        let authority_seeds = [PREFIX.as_bytes(), mm_key.as_ref(), &[creator_bump]];
+        
+        // order of remaining accounts: child transfer authority - child mint - child ata - child vault
+        for _i in 0..children_number {
+            // mint account of child NFT, get this from getTokenAccountsByOwner of "mixture PDA".
+            // let child_mint = &ctx.remaining_accounts[remaining_accounts_counter];
+            // remaining_accounts_counter += 1;
+            // user's ata of child NFT, for return.
+            let child_ata_info = &ctx.remaining_accounts[remaining_accounts_counter];
+            remaining_accounts_counter += 1;
+            // ata of child NFT owned by "mixture PDA", get this from getTokenAccountsByOwner of "mixture PDA".
+            let child_vault_info = &ctx.remaining_accounts[remaining_accounts_counter];
+            remaining_accounts_counter += 1;
+
+            // msg!("{} | {}", &child_authority_info.key, &child_mint.key);
+            // msg!("{} | {}", &child_ata_info.key, &child_vault_info.key);
+
+            // msg!("c string");
+            // spl_token_transfer(TokenTransferParams {
+            //     source: child_ata_info.clone(), //token_account_info.clone(),
+            //     destination: child_vault_info.clone(), //wallet.to_account_info(),
+            //     authority: child_authority_info.clone(), //transfer_authority_info.clone(),
+            //     authority_signer_seeds: &[],
+            //     token_program: token_program.to_account_info(),
+            //     amount: 1,
+            // })?;
+
+            let transfer_infos = vec![
+                child_vault_info.clone(),
+                child_ata_info.clone(),
+                mixture_machine.to_account_info(),
+                token_program.to_account_info(),
+            ];
+
+            invoke_signed(
+                &spl_token::instruction::transfer(
+                    token_program.key,
+                    child_vault_info.key,
+                    child_ata_info.key,
+                    &mixture_machine.key(),
+                    &[],
+                    1,
+                )?,
+                transfer_infos.as_slice(),
+                &[&authority_seeds],
+            )?;
+
+            // msg!("d string");
+        }
+
+        msg!("Before parent burn");
+        sol_log_compute_units();
+
+
+        spl_token_burn(TokenBurnParams {
+            mint: ctx.accounts.parent_token_mint.to_account_info(),
+            source: ctx.accounts.parent_token_account.to_account_info(),
+            amount: 1,
+            authority: payer.to_account_info(),//ctx.accounts.parent_burn_authority.to_account_info(),
+            authority_signer_seeds: None,
+            token_program: token_program.to_account_info(),
+        })?;
+
 
         msg!("Before instr check");
         sol_log_compute_units();
@@ -464,12 +610,12 @@ pub struct InitializeMixtureMachine<'info> {
 }
 
 /// Add multiple config lines to the candy machine.
-#[derive(Accounts)]
-pub struct AddConfigLines<'info> {
-    #[account(mut, has_one = authority)]
-    mixture_machine: Account<'info, MixtureMachine>,
-    authority: Signer<'info>,
-}
+// #[derive(Accounts)]
+// pub struct AddConfigLines<'info> {
+//     #[account(mut, has_one = authority)]
+//     mixture_machine: Account<'info, MixtureMachine>,
+//     authority: Signer<'info>,
+// }
 
 /// Withdraw SOL from candy machine account.
 // #[derive(Accounts)]
@@ -495,16 +641,43 @@ pub struct ComposeNFT<'info> {
     // through to token-metadata which will do all the validations we need on them.
     #[account(mut)]
     metadata: UncheckedAccount<'info>,
+    // Parent NFT's token mint account with no metadata
     #[account(mut)]
     mint: UncheckedAccount<'info>,
     mint_authority: Signer<'info>,
-    update_authority: Signer<'info>,
+    update_authority: Signer<'info>, // delete this in future.
     #[account(address = mpl_token_metadata::id())]
     token_metadata_program: UncheckedAccount<'info>,
     token_program: Program<'info, Token>,
     system_program: Program<'info, System>,
     rent: Sysvar<'info, Rent>,
-    clock: Sysvar<'info, Clock>,
+    // clock: Sysvar<'info, Clock>,
+    // #[account(address = sysvar::recent_blockhashes::ID)]
+    recent_blockhashes: UncheckedAccount<'info>,
+    #[account(address = sysvar::instructions::id())]
+    instruction_sysvar_account: UncheckedAccount<'info>,
+    // transfer_authority: Signer<'info>, // child NFT transfer authority
+}
+
+
+#[derive(Accounts)]
+#[instruction(creator_bump: u8)]
+pub struct DecomposeNFT<'info> {
+    // get mixture_machine PDA from parent NFT's metadata, in creators[1].
+    #[account(mut)]
+    mixture_machine: Account<'info, MixtureMachine>,
+    payer: Signer<'info>,
+    // With the following accounts we aren't using anchor macros because they are CPI'd
+    // through to token-metadata which will do all the validations we need on them.
+    #[account(mut)]
+    parent_token_mint: UncheckedAccount<'info>,
+    #[account(mut)]
+    parent_token_account: UncheckedAccount<'info>,
+    //parent_burn_authority: Signer<'info>,
+    token_program: Program<'info, Token>,
+    system_program: Program<'info, System>,
+    rent: Sysvar<'info, Rent>,
+    // clock: Sysvar<'info, Clock>,
     // #[account(address = sysvar::recent_blockhashes::ID)]
     recent_blockhashes: UncheckedAccount<'info>,
     #[account(address = sysvar::instructions::id())]
@@ -768,7 +941,7 @@ pub enum ErrorCode {
     // IndexGreaterThanLength,
     #[msg("Numerical overflow error!")]
     NumericalOverflowError,
-    #[msg("Can only provide up to 4 creators to breeding machine (because breeding machine is one)!")]
+    #[msg("Can only provide up to 4 creators to mixture machine (because mixture machine is one)!")]
     TooManyCreators,
     #[msg("Uuid must be exactly of 6 length")]
     UuidMustBeExactly6Length,

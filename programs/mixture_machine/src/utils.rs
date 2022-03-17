@@ -1,9 +1,9 @@
-use anchor_lang::prelude::{Sysvar, Signer};
+// use anchor_lang::prelude::{Sysvar, Signer};
 
 use {
-    crate::{MixtureMachine, ErrorCode},
+    crate::ErrorCode,
     anchor_lang::{
-        prelude::{Account, AccountInfo, Clock, ProgramError, ProgramResult, Pubkey},
+        prelude::{AccountInfo, ProgramError, ProgramResult, Pubkey},
         solana_program::{
             program::invoke_signed,
             program_pack::{IsInitialized, Pack},

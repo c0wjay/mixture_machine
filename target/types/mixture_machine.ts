@@ -61,7 +61,63 @@ export type MixtureMachine = {
           "isSigner": false
         },
         {
-          "name": "clock",
+          "name": "recentBlockhashes",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "instructionSysvarAccount",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "creatorBump",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "decomposeNft",
+      "accounts": [
+        {
+          "name": "mixtureMachine",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "payer",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "parentTokenMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "parentTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "parentBurnAuthority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
           "isMut": false,
           "isSigner": false
         },
@@ -220,7 +276,7 @@ export type MixtureMachine = {
     {
       "code": 6004,
       "name": "TooManyCreators",
-      "msg": "Can only provide up to 4 creators to breeding machine (because breeding machine is one)!"
+      "msg": "Can only provide up to 4 creators to mixture machine (because mixture machine is one)!"
     },
     {
       "code": 6005,
@@ -328,7 +384,63 @@ export const IDL: MixtureMachine = {
           "isSigner": false
         },
         {
-          "name": "clock",
+          "name": "recentBlockhashes",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "instructionSysvarAccount",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "creatorBump",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "decomposeNft",
+      "accounts": [
+        {
+          "name": "mixtureMachine",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "payer",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "parentTokenMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "parentTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "parentBurnAuthority",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
           "isMut": false,
           "isSigner": false
         },
@@ -487,7 +599,7 @@ export const IDL: MixtureMachine = {
     {
       "code": 6004,
       "name": "TooManyCreators",
-      "msg": "Can only provide up to 4 creators to breeding machine (because breeding machine is one)!"
+      "msg": "Can only provide up to 4 creators to mixture machine (because mixture machine is one)!"
     },
     {
       "code": 6005,
