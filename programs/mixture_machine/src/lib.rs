@@ -61,6 +61,7 @@ pub mod mixture_machine {
             return Err(ErrorCode::ChildrenAuthorityMissing.into());
         }
 
+        // total number of child NFTs.
         let children_number = ctx.remaining_accounts.len() / 4; // 나중에 checked_div로 바꿔주기
 
         // order of remaining accounts: child transfer authority - child mint - child ata - child vault
@@ -98,14 +99,14 @@ pub mod mixture_machine {
         let mm_key = mixture_machine.key();
         let authority_seeds = [PREFIX.as_bytes(), mm_key.as_ref(), &[creator_bump]];
 
-
+        // creators[0] = mixture_machine_creator, mixture machine's PDA & the owner of child NFT vault.
         let mut creators: Vec<mpl_token_metadata::state::Creator> =
             vec![mpl_token_metadata::state::Creator {
                 address: mixture_machine_creator.key(),
                 verified: true,
                 share: 0,
             }];
-        
+        // creators[1] = mixture_machine, mixture machine's PDA & seed of mixture_machine_creator.
         creators.push(mpl_token_metadata::state::Creator {
             address: mixture_machine.key(),
             verified: false,
@@ -200,6 +201,7 @@ pub mod mixture_machine {
     ) -> ProgramResult{
         // get mixture_machine PDA from parent NFT's metadata, in creators[1].
         let mixture_machine = &mut ctx.accounts.mixture_machine;
+        // get mixture_machine_creator PDA from parent NFT's metadata, in creators[0].
         let mixture_machine_creator = &ctx.accounts.mixture_machine_creator;
         let token_program = &ctx.accounts.token_program;
         //Account name the same for IDL compatability
@@ -220,6 +222,7 @@ pub mod mixture_machine {
             return Err(ErrorCode::ChildrenAuthorityMissing.into());
         }
 
+        // total number of child NFTs.
         let children_number = ctx.remaining_accounts.len() / 2; // 나중에 checked_div로 바꿔주기
 
         let mm_key = mixture_machine.key();
@@ -230,10 +233,11 @@ pub mod mixture_machine {
             // user's ata of child NFT, for return.
             let child_ata_info = &ctx.remaining_accounts[remaining_accounts_counter];
             remaining_accounts_counter += 1;
-            // ata of child NFT owned by "mixture PDA", get this from getTokenAccountsByOwner of "mixture PDA".
+            // ata of child NFT owned by "mixture_machine_creator PDA", get this from getTokenAccountsByOwner of "mixture_machine_creator PDA".
             let child_vault_info = &ctx.remaining_accounts[remaining_accounts_counter];
             remaining_accounts_counter += 1;
 
+            // transfer child NFTs from vault to user's ata.
             let transfer_infos = vec![
                 child_vault_info.clone(),
                 child_ata_info.clone(),
@@ -258,7 +262,7 @@ pub mod mixture_machine {
         msg!("Before parent burn");
         sol_log_compute_units();
 
-
+        // burn parent NFT.
         spl_token_burn(TokenBurnParams {
             mint: ctx.accounts.parent_token_mint.to_account_info(),
             source: ctx.accounts.parent_token_account.to_account_info(),
@@ -322,7 +326,6 @@ pub mod mixture_machine {
             authority: *ctx.accounts.authority.key,
         };
 
-        // symbol의 남은 칸 0으로 채워줌
         let mut array_of_zeroes = vec![];
         while array_of_zeroes.len() < MAX_SYMBOL_LENGTH - mixture_machine.data.symbol.len() {
             array_of_zeroes.push(0u8);
@@ -331,15 +334,14 @@ pub mod mixture_machine {
             mixture_machine.data.symbol.clone() + std::str::from_utf8(&array_of_zeroes).unwrap();
         mixture_machine.data.symbol = new_symbol;
 
-        // - 1 because we are going to be a creator
-        if mixture_machine.data.creators.len() > MAX_CREATOR_LIMIT - 1 {
+        // - 2 because we & mixture_machine PDA are going to be a creator
+        if mixture_machine.data.creators.len() > MAX_CREATOR_LIMIT - 2 {
             return Err(ErrorCode::TooManyCreators.into());
         }
 
         let mut new_data = MixtureMachine::discriminator().try_to_vec().unwrap();
         new_data.append(&mut mixture_machine.try_to_vec().unwrap());
         let mut data = mixture_machine_account.data.borrow_mut();
-        // god forgive me couldnt think of better way to deal with this
         for i in 0..new_data.len() {
             data[i] = new_data[i];
         }
@@ -347,6 +349,7 @@ pub mod mixture_machine {
         Ok(())
     }
 }
+
 
 /// Create a new mixture machine.
 #[derive(Accounts)]
@@ -438,13 +441,10 @@ pub struct MixtureMachineData {
     pub uri: String,
 }
 
-// Unfortunate duplication of token metadata so that IDL picks it up.
-
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
 pub struct Creator {
     pub address: Pubkey,
     pub verified: bool,
-    // In percentages, NOT basis points ;) Watch out!
     pub share: u8,
 }
 
