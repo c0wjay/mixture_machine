@@ -203,7 +203,6 @@ pub mod mixture_machine {
         let mixture_machine_creator = &ctx.accounts.mixture_machine_creator;
         let payer = &ctx.accounts.payer;
         let token_program = &ctx.accounts.token_program;
-        let parent_token_mint = &ctx.accounts.parent_token_mint;
         //Account name the same for IDL compatability
         let recent_slothashes = &ctx.accounts.recent_blockhashes;
         let instruction_sysvar_account = &ctx.accounts.instruction_sysvar_account;
@@ -242,7 +241,6 @@ pub mod mixture_machine {
                 mixture_machine_creator.to_account_info(),
                 token_program.to_account_info(),
             ];
-            msg!("{} | {} ", &child_vault_info.key, &child_ata_info.key);
 
             invoke_signed(
                 &spl_token::instruction::transfer(
@@ -263,7 +261,7 @@ pub mod mixture_machine {
 
 
         spl_token_burn(TokenBurnParams {
-            mint: parent_token_mint.to_account_info(),
+            mint: ctx.accounts.parent_token_mint.to_account_info(),
             source: ctx.accounts.parent_token_account.to_account_info(),
             amount: 1,
             authority: ctx.accounts.parent_burn_authority.to_account_info(),
@@ -396,7 +394,7 @@ pub struct ComposeNFT<'info> {
 #[derive(Accounts)]
 #[instruction(creator_bump: u8)]
 pub struct DecomposeNFT<'info> {
-    // mixture_machine PDA which is associated with parent NFT and owns child NFTs.
+    // get mixture_machine PDA from parent NFT's metadata, in creators[1].
     #[account(mut)]
     mixture_machine: Account<'info, MixtureMachine>,
     #[account(
