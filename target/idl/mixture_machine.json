@@ -87,6 +87,11 @@
           "isSigner": false
         },
         {
+          "name": "mixtureMachineCreator",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "payer",
           "isMut": false,
           "isSigner": true
