@@ -92,11 +92,6 @@
           "isSigner": false
         },
         {
-          "name": "payer",
-          "isMut": false,
-          "isSigner": true
-        },
-        {
           "name": "parentTokenMint",
           "isMut": true,
           "isSigner": false

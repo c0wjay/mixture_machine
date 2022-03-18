@@ -92,11 +92,6 @@ export type MixtureMachine = {
           "isSigner": false
         },
         {
-          "name": "payer",
-          "isMut": false,
-          "isSigner": true
-        },
-        {
           "name": "parentTokenMint",
           "isMut": true,
           "isSigner": false
@@ -418,11 +413,6 @@ export const IDL: MixtureMachine = {
           "name": "mixtureMachineCreator",
           "isMut": false,
           "isSigner": false
-        },
-        {
-          "name": "payer",
-          "isMut": false,
-          "isSigner": true
         },
         {
           "name": "parentTokenMint",

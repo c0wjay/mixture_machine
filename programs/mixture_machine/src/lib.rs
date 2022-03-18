@@ -201,7 +201,6 @@ pub mod mixture_machine {
         // get mixture_machine PDA from parent NFT's metadata, in creators[1].
         let mixture_machine = &mut ctx.accounts.mixture_machine;
         let mixture_machine_creator = &ctx.accounts.mixture_machine_creator;
-        let payer = &ctx.accounts.payer;
         let token_program = &ctx.accounts.token_program;
         //Account name the same for IDL compatability
         let recent_slothashes = &ctx.accounts.recent_blockhashes;
@@ -401,7 +400,6 @@ pub struct DecomposeNFT<'info> {
         seeds=[PREFIX.as_bytes(), mixture_machine.key().as_ref()], bump=creator_bump
     )]
     mixture_machine_creator: UncheckedAccount<'info>,
-    payer: Signer<'info>,
     // With the following accounts we aren't using anchor macros because they are CPI'd
     // through to token-metadata which will do all the validations we need on them.
     #[account(mut)]
