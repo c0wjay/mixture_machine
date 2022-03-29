@@ -1,6 +1,6 @@
 # Mixture_machine
 ## Core logic of composing NFT
-![image](https://user-images.githubusercontent.com/96561121/160633417-dc765304-5868-464f-b3c0-6528e1ab0c91.png)
+![Uploading image.png…]()
 
 
 * Compose of NFT   
