@@ -1,6 +1,7 @@
 # Mixture_machine
 ## Core logic of composing NFT
-![image](https://user-images.githubusercontent.com/96561121/158933209-1c7294c2-844a-4ad8-ad59-91819073d492.png)
+![image](https://user-images.githubusercontent.com/96561121/160633417-dc765304-5868-464f-b3c0-6528e1ab0c91.png)
+
 
 * Compose of NFT   
 As you invoke compose_nft function with 2 or more child NFTs,   
