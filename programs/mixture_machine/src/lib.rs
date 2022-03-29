@@ -2,7 +2,7 @@ pub mod utils;
 
 use {
     crate::utils::{
-        assert_is_ata, assert_owned_by, //assert_initialized, assert_keys_equal,
+        assert_is_ata, assert_owned_by, assert_keys_equal, //assert_initialized, 
         spl_token_transfer, TokenTransferParams, spl_token_burn, TokenBurnParams,
     },
     anchor_lang::{
@@ -261,6 +261,8 @@ pub mod mixture_machine {
 
         msg!("Before parent burn");
         sol_log_compute_units();
+        // check parent NFT's mint address that it is associated with Mixture PDA
+        // Parent NFT mint address를 seed로 주소 생성한 후, mm_key와 assertion
 
         // burn parent NFT.
         spl_token_burn(TokenBurnParams {
